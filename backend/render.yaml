@@ -3,5 +3,5 @@ services:
     name: windborne-backend
     env: docker
     plan: free
-    dockerfilePath: ./Dockerfile
     autoDeploy: true
+    dockerfilePath: ./Dockerfile
