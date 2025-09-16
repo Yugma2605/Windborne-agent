@@ -1,30 +1,24 @@
 # balloons/enricher.py
-import geopandas as gpd
-from shapely.geometry import Point
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Load world countries once
-WORLD = gpd.read_file("data/items.json").to_crs(epsg=4326)
+from geospatial import find_country_for_point
 
 def enrich_balloons(balloons):
     """
-    Enrich balloons with country info.
+    Enrich balloons with country info using lightweight geospatial operations.
     """
-    points = gpd.GeoDataFrame(
-        balloons,
-        geometry=[Point(b["lon"], b["lat"]) for b in balloons],
-        crs="EPSG:4326"
-    )
-
-    # Spatial join: balloons with countries
-    joined = gpd.sjoin(points, WORLD, how="left", predicate="within")
-
     enriched = []
-    for _, row in joined.iterrows():
+    for balloon in balloons:
+        # Find country for this balloon's coordinates
+        country = find_country_for_point(balloon["lat"], balloon["lon"])
+        
         enriched.append({
-            "id": row["id"],
-            "lat": row["lat"],
-            "lon": row["lon"],
-            "altitude": row["altitude"],
-            "country": row["NAME"] if row["NAME"] else "Unknown"
+            "id": balloon.get("id", ""),
+            "lat": balloon["lat"],
+            "lon": balloon["lon"],
+            "altitude": balloon.get("altitude", balloon.get("alt", 0)),
+            "country": country
         })
     return enriched

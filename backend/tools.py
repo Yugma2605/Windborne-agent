@@ -4,14 +4,12 @@ import math
 from pathlib import Path
 import requests
 import httpx
-import geopandas as gpd
-from shapely.geometry import Point
 import os
 import json
 import time
 
-# --- Load world countries from Natural Earth (via geopandas) ---
-WORLD = gpd.read_file("data/ne_110m_admin_0_countries.shp")
+# --- Load world countries using lightweight geospatial ---
+from geospatial import find_country_for_point
 CACHE_FILE = Path("data/balloons_cache.json")
 CACHE_TTL = 30 * 60  # 30 minutes in seconds
 
@@ -61,14 +59,8 @@ def format_balloons(raw_balloons: List[List[float]]) -> List[Dict]:
 def enrich_with_country(balloons: list) -> list:
     enriched = []
     for b in balloons:
-        point = Point(b["lon"], b["lat"])
-        match = WORLD[WORLD.contains(point)]
-        if not match.empty:
-            # Use NAME or ADMIN depending on dataset
-            country_col = "NAME" if "NAME" in match.columns else "ADMIN"
-            country = match.iloc[0][country_col]
-        else:
-            country = "Unknown"
+        # Find country using lightweight geospatial operations
+        country = find_country_for_point(b["lat"], b["lon"])
         b["country"] = country
         enriched.append(b)
     return enriched
