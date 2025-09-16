@@ -5,7 +5,7 @@ services:
     plan: free
     autoDeploy: true
     buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
+    startCommand: gunicorn main:app --bind 0.0.0.0:$PORT
     pythonVersion: 3.11.7
     envVars:
       - key: PYTHON_VERSION
