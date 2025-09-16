@@ -1,7 +1,9 @@
 services:
   - type: web
     name: windborne-backend
-    env: docker
+    env: python
     plan: free
     autoDeploy: true
-    dockerfilePath: ./Dockerfile
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    pythonVersion: 3.11.0
