@@ -8,7 +8,8 @@ import os
 import json
 import time
 
-# --- No geospatial dependencies ---
+# --- Load country detector ---
+from country_detector import get_country_for_coordinates
 CACHE_FILE = Path("data/balloons_cache.json")
 CACHE_TTL = 30 * 60  # 30 minutes in seconds
 
@@ -54,7 +55,21 @@ def format_balloons(raw_balloons: List[List[float]]) -> List[Dict]:
     """Convert raw API balloons [[lat, lon, alt], ...] into dicts."""
     return [{"lat": b[0], "lon": b[1], "alt": b[2]} for b in raw_balloons]
 
-# --- No country enrichment needed ---
+# --- Enrichment: add country info using lightweight detector ---
+async def enrich_with_country(balloons: list) -> list:
+    """Enrich balloons with country information using lightweight detection."""
+    enriched = []
+    for balloon in balloons:
+        try:
+            # Get country for this balloon's coordinates
+            country = await get_country_for_coordinates(balloon["lat"], balloon["lon"])
+            balloon["country"] = country
+        except Exception as e:
+            print(f"Warning: Could not detect country for balloon: {e}")
+            balloon["country"] = "Unknown"
+        
+        enriched.append(balloon)
+    return enriched
 
 # --- Analytics ---
 def highest_balloon(balloons: List[Dict]) -> Dict:
