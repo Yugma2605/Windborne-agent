@@ -224,13 +224,16 @@ async def balloons_by_country_tool():
             country = balloon.get("country", "Unknown")
             country_counts[country] = country_counts.get(country, 0) + 1
         
-        # Sort by count (descending)
+        # Sort by count (descending) and filter out "Unknown"
         sorted_countries = sorted(country_counts.items(), key=lambda x: x[1], reverse=True)
+        known_countries = [(country, count) for country, count in sorted_countries if country != "Unknown"]
         
         return {
             "total_balloons": len(enriched),
             "countries": dict(sorted_countries),
-            "country_with_most_balloons": sorted_countries[0] if sorted_countries else ("None", 0)
+            "known_countries": dict(known_countries),
+            "country_with_most_balloons": known_countries[0] if known_countries else ("None", 0),
+            "unknown_count": country_counts.get("Unknown", 0)
         }
     except Exception as e:
         return {"error": f"Failed to get balloons by country: {str(e)}"}

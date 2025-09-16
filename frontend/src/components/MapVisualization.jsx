@@ -242,7 +242,7 @@ const MapVisualization = () => {
 
 
       {/* Map Container */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 relative">
         <div className="h-full rounded-xl overflow-hidden border border-white/20 bg-gray-800">
           <div style={{ height: 'calc(100vh - 300px)', width: '100%', minHeight: '500px' }}>
             <MapContainer
@@ -302,6 +302,35 @@ const MapVisualization = () => {
                 </Marker>
               ))}
             </MapContainer>
+          </div>
+        </div>
+        
+        {/* Altitude Legend */}
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-white/20">
+          <h3 className="text-sm font-semibold text-gray-800 mb-3">Balloon Altitude Legend</h3>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 rounded-full bg-red-500 border border-white"></div>
+              <span className="text-xs text-gray-700">High Altitude (15+ km)</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 rounded-full bg-orange-500 border border-white"></div>
+              <span className="text-xs text-gray-700">Medium-High (10-15 km)</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 rounded-full bg-yellow-500 border border-white"></div>
+              <span className="text-xs text-gray-700">Medium (5-10 km)</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 rounded-full bg-green-500 border border-white"></div>
+              <span className="text-xs text-gray-700">Low Altitude (0-5 km)</span>
+            </div>
+            <div className="flex items-center space-x-2 mt-2 pt-2 border-t border-gray-300">
+              <div className="w-4 h-4 rounded-full bg-yellow-400 border border-white flex items-center justify-center">
+                <span className="text-xs text-white font-bold">★</span>
+              </div>
+              <span className="text-xs text-gray-700">Highest Balloon</span>
+            </div>
           </div>
         </div>
       </div>
