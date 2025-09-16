@@ -1,0 +1,14 @@
+# Alternative requirements with versions that work well together
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+requests==2.31.0
+python-dotenv==1.0.0
+google-generativeai==0.3.2
+httpx==0.25.2
+
+# GeoPandas and dependencies - using specific versions
+geopandas==0.14.1
+shapely==2.0.2
+pyproj==3.6.1
+fiona==1.9.5

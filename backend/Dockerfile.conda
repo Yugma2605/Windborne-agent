@@ -1,0 +1,39 @@
+# Alternative Dockerfile using conda-forge for better GeoPandas support
+FROM continuumio/miniconda3:latest
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set workdir
+WORKDIR /app
+
+# Copy requirements file
+COPY requirements.txt .
+
+# Install conda-forge packages (better pre-compiled support)
+RUN conda install -c conda-forge \
+    geopandas \
+    shapely \
+    gdal \
+    proj \
+    geos \
+    && conda clean -afy
+
+# Install remaining Python packages via pip
+RUN pip install --upgrade pip \
+    && pip install fastapi==0.104.1 \
+    && pip install uvicorn==0.24.0 \
+    && pip install pydantic==2.5.0 \
+    && pip install requests==2.31.0 \
+    && pip install python-dotenv==1.0.0 \
+    && pip install google-generativeai==0.3.2 \
+    && pip install httpx==0.25.2
+
+# Copy rest of app
+COPY . .
+
+# Expose port for Render
+EXPOSE 8000
+
+# Start FastAPI with Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
