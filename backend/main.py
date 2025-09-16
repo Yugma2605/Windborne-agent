@@ -45,15 +45,8 @@ def get_balloons():
         # Format balloon data
         formatted_balloons = format_balloons(raw_balloons)
         
-        # Enrich with country information (with timeout)
-        try:
-            enriched_balloons = asyncio.run(asyncio.wait_for(enrich_with_country(formatted_balloons), timeout=30.0))
-        except asyncio.TimeoutError:
-            print("Country detection timed out, using fallback")
-            # Fallback: add "Unknown" to all balloons
-            enriched_balloons = formatted_balloons
-            for balloon in enriched_balloons:
-                balloon["country"] = "Unknown"
+        # Enrich with country information using local dataset
+        enriched_balloons = enrich_with_country(formatted_balloons)
         
         # Add balloon IDs and mock data for frontend
         balloons_with_ids = []

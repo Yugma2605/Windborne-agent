@@ -10,7 +10,7 @@ import time
 import asyncio
 
 # --- Load country detector ---
-from country_detector import get_country_for_coordinates
+from country_dataset import get_country_for_coordinates
 CACHE_FILE = Path("data/balloons_cache.json")
 CACHE_TTL = 30 * 60  # 30 minutes in seconds
 
@@ -56,30 +56,21 @@ def format_balloons(raw_balloons: List[List[float]]) -> List[Dict]:
     """Convert raw API balloons [[lat, lon, alt], ...] into dicts."""
     return [{"lat": b[0], "lon": b[1], "alt": b[2]} for b in raw_balloons]
 
-# --- Enrichment: add country info using lightweight detector ---
-async def enrich_with_country(balloons: list) -> list:
-    """Enrich balloons with country information using lightweight detection."""
+# --- Enrichment: add country info using local dataset ---
+def enrich_with_country(balloons: list) -> list:
+    """Enrich balloons with country information using local dataset."""
     enriched = []
     
-    # Process balloons in parallel for speed
-    async def get_country_for_balloon(balloon):
+    for balloon in balloons:
         try:
-            country = await get_country_for_coordinates(balloon["lat"], balloon["lon"])
+            # Get country for this balloon's coordinates using local dataset
+            country = get_country_for_coordinates(balloon["lat"], balloon["lon"])
             balloon["country"] = country
         except Exception as e:
             print(f"Warning: Could not detect country for balloon: {e}")
             balloon["country"] = "Unknown"
-        return balloon
-    
-    # Use asyncio.gather to process all balloons in parallel
-    try:
-        enriched = await asyncio.gather(*[get_country_for_balloon(balloon) for balloon in balloons])
-    except Exception as e:
-        print(f"Warning: Country detection failed, using fallback: {e}")
-        # Fallback: just add "Unknown" to all balloons
-        for balloon in balloons:
-            balloon["country"] = "Unknown"
-        enriched = balloons
+        
+        enriched.append(balloon)
     
     return enriched
 

@@ -1,0 +1,213 @@
+"""
+Lightweight country detection using local dataset.
+Much faster than API calls and doesn't break the pipeline.
+"""
+import json
+import math
+from typing import Dict, List, Tuple
+
+class CountryDataset:
+    """Fast country detection using local dataset."""
+    
+    def __init__(self):
+        self.country_bounds = self._load_country_bounds()
+    
+    def _load_country_bounds(self) -> Dict:
+        """Load country boundaries from local dataset."""
+        # Simplified country boundaries (lat_min, lat_max, lon_min, lon_max)
+        # This covers major countries and regions
+        return {
+            "United States": {"lat_min": 24.0, "lat_max": 49.0, "lon_min": -125.0, "lon_max": -66.0},
+            "Canada": {"lat_min": 41.0, "lat_max": 84.0, "lon_min": -141.0, "lon_max": -52.0},
+            "Mexico": {"lat_min": 14.0, "lat_max": 32.0, "lon_min": -118.0, "lon_max": -86.0},
+            "Brazil": {"lat_min": -34.0, "lat_max": 5.0, "lon_min": -74.0, "lon_max": -34.0},
+            "Argentina": {"lat_min": -55.0, "lat_max": -21.0, "lon_min": -74.0, "lon_max": -53.0},
+            "Chile": {"lat_min": -56.0, "lat_max": -17.0, "lon_min": -76.0, "lon_max": -66.0},
+            "Peru": {"lat_min": -18.0, "lat_max": 0.0, "lon_min": -84.0, "lon_max": -68.0},
+            "Colombia": {"lat_min": -4.0, "lat_max": 15.0, "lon_min": -82.0, "lon_max": -66.0},
+            "Venezuela": {"lat_min": 0.0, "lat_max": 16.0, "lon_min": -74.0, "lon_max": -59.0},
+            "Ecuador": {"lat_min": -5.0, "lat_max": 2.0, "lon_min": -92.0, "lon_max": -75.0},
+            "Bolivia": {"lat_min": -23.0, "lat_max": -9.0, "lon_min": -69.0, "lon_max": -57.0},
+            "Paraguay": {"lat_min": -27.0, "lat_max": -19.0, "lon_min": -63.0, "lon_max": -54.0},
+            "Uruguay": {"lat_min": -35.0, "lat_max": -30.0, "lon_min": -58.0, "lon_max": -53.0},
+            "Guyana": {"lat_min": 1.0, "lat_max": 9.0, "lon_min": -62.0, "lon_max": -56.0},
+            "Suriname": {"lat_min": 1.0, "lat_max": 7.0, "lon_min": -58.0, "lon_max": -53.0},
+            "French Guiana": {"lat_min": 2.0, "lat_max": 6.0, "lon_min": -55.0, "lon_max": -51.0},
+            
+            # Europe
+            "United Kingdom": {"lat_min": 49.0, "lat_max": 61.0, "lon_min": -8.0, "lon_max": 2.0},
+            "France": {"lat_min": 41.0, "lat_max": 51.0, "lon_min": -5.0, "lon_max": 10.0},
+            "Germany": {"lat_min": 47.0, "lat_max": 55.0, "lon_min": 5.0, "lon_max": 15.0},
+            "Spain": {"lat_min": 35.0, "lat_max": 44.0, "lon_min": -9.0, "lon_max": 4.0},
+            "Italy": {"lat_min": 35.0, "lat_max": 47.0, "lon_min": 6.0, "lon_max": 19.0},
+            "Netherlands": {"lat_min": 51.0, "lat_max": 54.0, "lon_min": 3.0, "lon_max": 7.0},
+            "Belgium": {"lat_min": 49.0, "lat_max": 52.0, "lon_min": 2.0, "lon_max": 6.0},
+            "Switzerland": {"lat_min": 45.0, "lat_max": 48.0, "lon_min": 5.0, "lon_max": 11.0},
+            "Austria": {"lat_min": 46.0, "lat_max": 49.0, "lon_min": 9.0, "lon_max": 17.0},
+            "Poland": {"lat_min": 49.0, "lat_max": 55.0, "lon_min": 14.0, "lon_max": 24.0},
+            "Czech Republic": {"lat_min": 48.0, "lat_max": 51.0, "lon_min": 12.0, "lon_max": 19.0},
+            "Slovakia": {"lat_min": 47.0, "lat_max": 50.0, "lon_min": 16.0, "lon_max": 23.0},
+            "Hungary": {"lat_min": 45.0, "lat_max": 49.0, "lon_min": 16.0, "lon_max": 23.0},
+            "Romania": {"lat_min": 43.0, "lat_max": 48.0, "lon_min": 20.0, "lon_max": 30.0},
+            "Bulgaria": {"lat_min": 41.0, "lat_max": 44.0, "lon_min": 22.0, "lon_max": 29.0},
+            "Greece": {"lat_min": 34.0, "lat_max": 42.0, "lon_min": 19.0, "lon_max": 30.0},
+            "Turkey": {"lat_min": 35.0, "lat_max": 42.0, "lon_min": 26.0, "lon_max": 45.0},
+            "Russia": {"lat_min": 41.0, "lat_max": 82.0, "lon_min": 19.0, "lon_max": 180.0},
+            "Ukraine": {"lat_min": 44.0, "lat_max": 53.0, "lon_min": 22.0, "lon_max": 41.0},
+            "Belarus": {"lat_min": 51.0, "lat_max": 56.0, "lon_min": 23.0, "lon_max": 33.0},
+            "Lithuania": {"lat_min": 53.0, "lat_max": 56.0, "lon_min": 20.0, "lon_max": 27.0},
+            "Latvia": {"lat_min": 55.0, "lat_max": 58.0, "lon_min": 20.0, "lon_max": 28.0},
+            "Estonia": {"lat_min": 57.0, "lat_max": 60.0, "lon_min": 21.0, "lon_max": 28.0},
+            "Finland": {"lat_min": 59.0, "lat_max": 71.0, "lon_min": 19.0, "lon_max": 32.0},
+            "Sweden": {"lat_min": 55.0, "lat_max": 69.0, "lon_min": 10.0, "lon_max": 25.0},
+            "Norway": {"lat_min": 57.0, "lat_max": 81.0, "lon_min": 4.0, "lon_max": 32.0},
+            "Denmark": {"lat_min": 54.0, "lat_max": 58.0, "lon_min": 8.0, "lon_max": 16.0},
+            "Iceland": {"lat_min": 63.0, "lat_max": 67.0, "lon_min": -25.0, "lon_max": -13.0},
+            "Ireland": {"lat_min": 51.0, "lat_max": 55.0, "lon_min": -11.0, "lon_max": -5.0},
+            "Portugal": {"lat_min": 36.0, "lat_max": 42.0, "lon_min": -10.0, "lon_max": -6.0},
+            
+            # Asia
+            "China": {"lat_min": 18.0, "lat_max": 54.0, "lon_min": 97.0, "lon_max": 135.0},
+            "India": {"lat_min": 6.0, "lat_max": 37.0, "lon_min": 68.0, "lon_max": 97.0},
+            "Japan": {"lat_min": 24.0, "lat_max": 46.0, "lon_min": 122.0, "lon_max": 146.0},
+            "South Korea": {"lat_min": 33.0, "lat_max": 39.0, "lon_min": 124.0, "lon_max": 132.0},
+            "North Korea": {"lat_min": 37.0, "lat_max": 43.0, "lon_min": 124.0, "lon_max": 131.0},
+            "Thailand": {"lat_min": 5.0, "lat_max": 21.0, "lon_min": 97.0, "lon_max": 106.0},
+            "Vietnam": {"lat_min": 8.0, "lat_max": 24.0, "lon_min": 102.0, "lon_max": 110.0},
+            "Laos": {"lat_min": 13.0, "lat_max": 23.0, "lon_min": 100.0, "lon_max": 108.0},
+            "Cambodia": {"lat_min": 10.0, "lat_max": 15.0, "lon_min": 102.0, "lon_max": 108.0},
+            "Myanmar": {"lat_min": 9.0, "lat_max": 29.0, "lon_min": 92.0, "lon_max": 102.0},
+            "Malaysia": {"lat_min": 0.0, "lat_max": 8.0, "lon_min": 99.0, "lon_max": 120.0},
+            "Singapore": {"lat_min": 1.0, "lat_max": 2.0, "lon_min": 103.0, "lon_max": 105.0},
+            "Indonesia": {"lat_min": -11.0, "lat_max": 7.0, "lon_min": 95.0, "lon_max": 141.0},
+            "Philippines": {"lat_min": 4.0, "lat_max": 21.0, "lon_min": 116.0, "lon_max": 127.0},
+            "Brunei": {"lat_min": 4.0, "lat_max": 5.0, "lon_min": 114.0, "lon_max": 115.0},
+            "Bangladesh": {"lat_min": 20.0, "lat_max": 27.0, "lon_min": 88.0, "lon_max": 93.0},
+            "Sri Lanka": {"lat_min": 5.0, "lat_max": 10.0, "lon_min": 79.0, "lon_max": 82.0},
+            "Pakistan": {"lat_min": 23.0, "lat_max": 37.0, "lon_min": 60.0, "lon_max": 78.0},
+            "Afghanistan": {"lat_min": 29.0, "lat_max": 39.0, "lon_min": 60.0, "lon_max": 75.0},
+            "Iran": {"lat_min": 25.0, "lat_max": 40.0, "lon_min": 44.0, "lon_max": 64.0},
+            "Iraq": {"lat_min": 29.0, "lat_max": 38.0, "lon_min": 38.0, "lon_max": 49.0},
+            "Syria": {"lat_min": 32.0, "lat_max": 37.0, "lon_min": 35.0, "lon_max": 42.0},
+            "Lebanon": {"lat_min": 33.0, "lat_max": 35.0, "lon_min": 35.0, "lon_max": 37.0},
+            "Jordan": {"lat_min": 29.0, "lat_max": 33.0, "lon_min": 34.0, "lon_max": 40.0},
+            "Israel": {"lat_min": 29.0, "lat_max": 34.0, "lon_min": 34.0, "lon_max": 36.0},
+            "Palestine": {"lat_min": 31.0, "lat_max": 32.0, "lon_min": 34.0, "lon_max": 35.0},
+            "Saudi Arabia": {"lat_min": 16.0, "lat_max": 33.0, "lon_min": 34.0, "lon_max": 56.0},
+            "Kuwait": {"lat_min": 28.0, "lat_max": 31.0, "lon_min": 46.0, "lon_max": 49.0},
+            "Bahrain": {"lat_min": 25.0, "lat_max": 27.0, "lon_min": 50.0, "lon_max": 51.0},
+            "Qatar": {"lat_min": 24.0, "lat_max": 27.0, "lon_min": 50.0, "lon_max": 52.0},
+            "United Arab Emirates": {"lat_min": 22.0, "lat_max": 26.0, "lon_min": 51.0, "lon_max": 57.0},
+            "Oman": {"lat_min": 16.0, "lat_max": 27.0, "lon_min": 51.0, "lon_max": 60.0},
+            "Yemen": {"lat_min": 12.0, "lat_max": 19.0, "lon_min": 42.0, "lon_max": 54.0},
+            "Kazakhstan": {"lat_min": 40.0, "lat_max": 56.0, "lon_min": 46.0, "lon_max": 87.0},
+            "Uzbekistan": {"lat_min": 37.0, "lat_max": 46.0, "lon_min": 56.0, "lon_max": 74.0},
+            "Turkmenistan": {"lat_min": 35.0, "lat_max": 43.0, "lon_min": 52.0, "lon_max": 67.0},
+            "Tajikistan": {"lat_min": 36.0, "lat_max": 41.0, "lon_min": 67.0, "lon_max": 75.0},
+            "Kyrgyzstan": {"lat_min": 39.0, "lat_max": 44.0, "lon_min": 69.0, "lon_max": 81.0},
+            "Mongolia": {"lat_min": 41.0, "lat_max": 52.0, "lon_min": 87.0, "lon_max": 120.0},
+            "Nepal": {"lat_min": 26.0, "lat_max": 31.0, "lon_min": 80.0, "lon_max": 89.0},
+            "Bhutan": {"lat_min": 26.0, "lat_max": 29.0, "lon_min": 88.0, "lon_max": 93.0},
+            
+            # Africa
+            "Egypt": {"lat_min": 22.0, "lat_max": 32.0, "lon_min": 24.0, "lon_max": 37.0},
+            "Libya": {"lat_min": 19.0, "lat_max": 34.0, "lon_min": 9.0, "lon_max": 26.0},
+            "Tunisia": {"lat_min": 30.0, "lat_max": 38.0, "lon_min": 7.0, "lon_max": 12.0},
+            "Algeria": {"lat_min": 18.0, "lat_max": 38.0, "lon_min": -9.0, "lon_max": 12.0},
+            "Morocco": {"lat_min": 27.0, "lat_max": 36.0, "lon_min": -17.0, "lon_max": -1.0},
+            "Sudan": {"lat_min": 8.0, "lat_max": 23.0, "lon_min": 21.0, "lon_max": 39.0},
+            "South Sudan": {"lat_min": 3.0, "lat_max": 13.0, "lon_min": 23.0, "lon_max": 36.0},
+            "Ethiopia": {"lat_min": 3.0, "lat_max": 18.0, "lon_min": 32.0, "lon_max": 48.0},
+            "Eritrea": {"lat_min": 12.0, "lat_max": 18.0, "lon_min": 36.0, "lon_max": 44.0},
+            "Djibouti": {"lat_min": 10.0, "lat_max": 13.0, "lon_min": 41.0, "lon_max": 44.0},
+            "Somalia": {"lat_min": -2.0, "lat_max": 12.0, "lon_min": 40.0, "lon_max": 52.0},
+            "Kenya": {"lat_min": -5.0, "lat_max": 6.0, "lon_min": 33.0, "lon_max": 42.0},
+            "Uganda": {"lat_min": -2.0, "lat_max": 5.0, "lon_min": 29.0, "lon_max": 35.0},
+            "Tanzania": {"lat_min": -12.0, "lat_max": -1.0, "lon_min": 29.0, "lon_max": 41.0},
+            "Rwanda": {"lat_min": -3.0, "lat_max": -1.0, "lon_min": 28.0, "lon_max": 31.0},
+            "Burundi": {"lat_min": -5.0, "lat_max": -2.0, "lon_min": 28.0, "lon_max": 31.0},
+            "Democratic Republic of the Congo": {"lat_min": -14.0, "lat_max": 6.0, "lon_min": 12.0, "lon_max": 32.0},
+            "Republic of the Congo": {"lat_min": -5.0, "lat_max": 4.0, "lon_min": 11.0, "lon_max": 19.0},
+            "Central African Republic": {"lat_min": 2.0, "lat_max": 11.0, "lon_min": 14.0, "lon_max": 28.0},
+            "Cameroon": {"lat_min": 1.0, "lat_max": 14.0, "lon_min": 8.0, "lon_max": 17.0},
+            "Chad": {"lat_min": 7.0, "lat_max": 24.0, "lon_min": 13.0, "lon_max": 24.0},
+            "Niger": {"lat_min": 11.0, "lat_max": 24.0, "lon_min": 0.0, "lon_max": 17.0},
+            "Nigeria": {"lat_min": 4.0, "lat_max": 14.0, "lon_min": 2.0, "lon_max": 15.0},
+            "Benin": {"lat_min": 6.0, "lat_max": 13.0, "lon_min": 0.0, "lon_max": 4.0},
+            "Togo": {"lat_min": 6.0, "lat_max": 11.0, "lon_min": 0.0, "lon_max": 2.0},
+            "Ghana": {"lat_min": 4.0, "lat_max": 11.0, "lon_min": -4.0, "lon_max": 2.0},
+            "Burkina Faso": {"lat_min": 9.0, "lat_max": 15.0, "lon_min": -6.0, "lon_max": 2.0},
+            "Mali": {"lat_min": 10.0, "lat_max": 25.0, "lon_min": -12.0, "lon_max": 4.0},
+            "Senegal": {"lat_min": 12.0, "lat_max": 17.0, "lon_min": -18.0, "lon_max": -11.0},
+            "Gambia": {"lat_min": 13.0, "lat_max": 14.0, "lon_min": -17.0, "lon_max": -13.0},
+            "Guinea-Bissau": {"lat_min": 10.0, "lat_max": 13.0, "lon_min": -17.0, "lon_max": -13.0},
+            "Guinea": {"lat_min": 7.0, "lat_max": 13.0, "lon_min": -15.0, "lon_max": -7.0},
+            "Sierra Leone": {"lat_min": 6.0, "lat_max": 10.0, "lon_min": -14.0, "lon_max": -10.0},
+            "Liberia": {"lat_min": 4.0, "lat_max": 9.0, "lon_min": -12.0, "lon_max": -7.0},
+            "Ivory Coast": {"lat_min": 4.0, "lat_max": 11.0, "lon_min": -9.0, "lon_max": -2.0},
+            "South Africa": {"lat_min": -47.0, "lat_max": -22.0, "lon_min": 16.0, "lon_max": 33.0},
+            "Namibia": {"lat_min": -29.0, "lat_max": -16.0, "lon_min": 11.0, "lon_max": 26.0},
+            "Botswana": {"lat_min": -27.0, "lat_max": -17.0, "lon_min": 19.0, "lon_max": 30.0},
+            "Zimbabwe": {"lat_min": -23.0, "lat_max": -15.0, "lon_min": 25.0, "lon_max": 34.0},
+            "Zambia": {"lat_min": -18.0, "lat_max": -8.0, "lon_min": 21.0, "lon_max": 34.0},
+            "Malawi": {"lat_min": -17.0, "lat_max": -9.0, "lon_min": 32.0, "lon_max": 36.0},
+            "Mozambique": {"lat_min": -27.0, "lat_max": -10.0, "lon_min": 30.0, "lon_max": 41.0},
+            "Madagascar": {"lat_min": -26.0, "lat_max": -11.0, "lon_min": 43.0, "lon_max": 51.0},
+            "Mauritius": {"lat_min": -21.0, "lat_max": -19.0, "lon_min": 57.0, "lon_max": 58.0},
+            "Seychelles": {"lat_min": -10.0, "lat_max": -3.0, "lon_min": 45.0, "lon_max": 57.0},
+            "Comoros": {"lat_min": -13.0, "lat_max": -11.0, "lon_min": 43.0, "lon_max": 45.0},
+            "Angola": {"lat_min": -18.0, "lat_max": -4.0, "lon_min": 11.0, "lon_max": 24.0},
+            "Gabon": {"lat_min": -4.0, "lat_max": 2.0, "lon_min": 8.0, "lon_max": 15.0},
+            "Equatorial Guinea": {"lat_min": -2.0, "lat_max": 4.0, "lon_min": 5.0, "lon_max": 12.0},
+            "Sao Tome and Principe": {"lat_min": 0.0, "lat_max": 2.0, "lon_min": 6.0, "lon_max": 8.0},
+            
+            # Oceania
+            "Australia": {"lat_min": -44.0, "lat_max": -10.0, "lon_min": 113.0, "lon_max": 154.0},
+            "New Zealand": {"lat_min": -48.0, "lat_max": -34.0, "lon_min": 166.0, "lon_max": 179.0},
+            "Papua New Guinea": {"lat_min": -12.0, "lat_max": -1.0, "lon_min": 140.0, "lon_max": 160.0},
+            "Fiji": {"lat_min": -21.0, "lat_max": -16.0, "lon_min": 177.0, "lon_max": -178.0},
+            "Samoa": {"lat_min": -14.0, "lat_max": -13.0, "lon_min": -173.0, "lon_max": -171.0},
+            "Tonga": {"lat_min": -24.0, "lat_max": -15.0, "lon_min": -176.0, "lon_max": -173.0},
+            "Vanuatu": {"lat_min": -21.0, "lat_max": -13.0, "lon_min": 166.0, "lon_max": 171.0},
+            "Solomon Islands": {"lat_min": -12.0, "lat_max": -5.0, "lon_min": 155.0, "lon_max": 167.0},
+            "New Caledonia": {"lat_min": -23.0, "lat_max": -19.0, "lon_min": 163.0, "lon_max": 168.0},
+            "French Polynesia": {"lat_min": -28.0, "lat_max": -7.0, "lon_min": -155.0, "lon_max": -134.0},
+            "Cook Islands": {"lat_min": -22.0, "lat_max": -8.0, "lon_min": -166.0, "lon_max": -157.0},
+            "Niue": {"lat_min": -20.0, "lat_max": -18.0, "lon_min": -170.0, "lon_max": -169.0},
+            "Tuvalu": {"lat_min": -11.0, "lat_max": -5.0, "lon_min": 176.0, "lon_max": 180.0},
+            "Kiribati": {"lat_min": -5.0, "lat_max": 5.0, "lon_min": -175.0, "lon_max": -150.0},
+            "Nauru": {"lat_min": -1.0, "lat_max": 0.0, "lon_min": 166.0, "lon_max": 167.0},
+            "Palau": {"lat_min": 2.0, "lat_max": 9.0, "lon_min": 131.0, "lon_max": 135.0},
+            "Micronesia": {"lat_min": 1.0, "lat_max": 10.0, "lon_min": 137.0, "lon_max": 163.0},
+            "Marshall Islands": {"lat_min": 4.0, "lat_max": 15.0, "lon_min": 160.0, "lon_max": 173.0},
+            "Guam": {"lat_min": 13.0, "lat_max": 14.0, "lon_min": 144.0, "lon_max": 145.0},
+            "Northern Mariana Islands": {"lat_min": 14.0, "lat_max": 21.0, "lon_min": 144.0, "lon_max": 147.0},
+            "Hawaii": {"lat_min": 18.0, "lat_max": 23.0, "lon_min": -162.0, "lon_max": -154.0},
+        }
+    
+    def get_country(self, lat: float, lon: float) -> str:
+        """Get country for given coordinates using local dataset."""
+        try:
+            for country, bounds in self.country_bounds.items():
+                if (bounds["lat_min"] <= lat <= bounds["lat_max"] and 
+                    bounds["lon_min"] <= lon <= bounds["lon_max"]):
+                    return country
+            return "Unknown"
+        except Exception as e:
+            print(f"Error in country detection: {e}")
+            return "Unknown"
+
+# Global instance
+_country_dataset = None
+
+def get_country_dataset() -> CountryDataset:
+    """Get or create the global country dataset instance."""
+    global _country_dataset
+    if _country_dataset is None:
+        _country_dataset = CountryDataset()
+    return _country_dataset
+
+def get_country_for_coordinates(lat: float, lon: float) -> str:
+    """Get country for given coordinates using local dataset."""
+    dataset = get_country_dataset()
+    return dataset.get_country(lat, lon)
