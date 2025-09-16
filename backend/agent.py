@@ -4,19 +4,41 @@ from dotenv import load_dotenv
 from langchain.agents import Tool, initialize_agent, AgentType
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Import only the tools that exist
+# Import the tools that exist
 from tools import (
     fetch_balloons,
     format_balloons,
-    highest_balloon
+    highest_balloon,
+    fastest_balloon_last2h_tool,
+    fetch_hurricanes,
+    fetch_wildfires,
+    highest_balloon_tool,
+    average_altitude_tool,
+    fastest_balloon_tool,
+    balloons_in_country_tool,
+    visited_countries_tool,
+    get_all_balloon_speeds_tool,
+    fastest_balloons_by_country_tool,
+    top_fastest_balloons_tool,
+    balloon_speed_analysis_tool,
+    most_distance_covered_tool,
+    distance_rankings_tool,
+    wind_analysis_tool,
+    atmospheric_anomalies_tool,
+    weather_fronts_tool,
+    comprehensive_weather_analysis_tool
 )
 
 load_dotenv()
 API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Load Gemini LLM with fallback
+# Load Gemini LLM with proper configuration
 if API_KEY:
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", api_key=API_KEY)
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash", 
+        api_key=API_KEY,
+        convert_system_message_to_human=True
+    )
 else:
     print("Warning: GOOGLE_API_KEY not found. AI agent will not work properly.")
     # Create a dummy LLM for testing
@@ -25,36 +47,92 @@ else:
             return "I'm sorry, but the AI agent is not properly configured. Please check the GOOGLE_API_KEY environment variable."
     llm = DummyLLM()
 
-# --- Simplified Tools ---
-async def get_balloons_tool():
-    """Get current balloon data"""
-    try:
-        raw_balloons = await fetch_balloons(0)
-        formatted_balloons = format_balloons(raw_balloons)
-        return {"balloons": formatted_balloons, "count": len(formatted_balloons)}
-    except Exception as e:
-        return {"error": f"Failed to fetch balloons: {str(e)}"}
-
-async def get_highest_balloon_tool():
-    """Get the balloon with the highest altitude"""
-    try:
-        raw_balloons = await fetch_balloons(0)
-        formatted_balloons = format_balloons(raw_balloons)
-        highest = highest_balloon(formatted_balloons)
-        return highest
-    except Exception as e:
-        return {"error": f"Failed to get highest balloon: {str(e)}"}
-
+# --- Tools ---
 balloon_tools = [
     Tool(
-        name="get_balloons",
-        func=lambda *args, **kwargs: asyncio.run(get_balloons_tool()),
-        description="Get current balloon data with positions and altitudes."
+        name="highest_balloon",
+        func=lambda *args, **kwargs: asyncio.run(highest_balloon_tool()),
+        description="Get the balloon with the highest altitude globally. Returns enriched info with country."
     ),
     Tool(
-        name="get_highest_balloon",
-        func=lambda *args, **kwargs: asyncio.run(get_highest_balloon_tool()),
-        description="Get the balloon with the highest altitude currently."
+        name="average_altitude",
+        func=lambda *args, **kwargs: asyncio.run(average_altitude_tool()),
+        description="Compute average altitude of all balloons globally."
+    ),
+    Tool(
+        name="fastest_balloon_last2h",
+        func=lambda *args, **kwargs: asyncio.run(fastest_balloon_last2h_tool(*args, **kwargs)),
+        description="Returns the balloon that moved the fastest between the last 2 hours."
+    ),
+    Tool(
+        name="balloons_in_country",
+        func=lambda country: asyncio.run(balloons_in_country_tool(country)),
+        description="List all balloons currently in a given country. Input: country name as a string."
+    ),
+    Tool(
+        name="visited_countries",
+        func=lambda balloon_id: asyncio.run(visited_countries_tool(balloon_id)),
+        description="Get the list of countries that a balloon has traveled through. Input: balloon ID string (e.g., 'B021')."
+    ),
+    Tool(
+        name="get_hurricanes",
+        func=lambda *args, **kwargs: asyncio.run(fetch_hurricanes()),
+        description="Fetch current active hurricanes and their positions."
+    ),
+    Tool(
+        name="get_wildfires",
+        func=lambda bbox="-125,25,-66,49", hours=24: fetch_wildfires(bbox, hours),
+        description="Fetch recent wildfires from NASA FIRMS. Input optional: bounding box and time window in hours."
+    ),
+    Tool(
+        name="get_all_balloon_speeds",
+        func=lambda *args, **kwargs: asyncio.run(get_all_balloon_speeds_tool()),
+        description="Get speeds for all balloons in the last hour. Returns list of balloons with speed data."
+    ),
+    Tool(
+        name="fastest_balloons_by_country",
+        func=lambda *args, **kwargs: asyncio.run(fastest_balloons_by_country_tool()),
+        description="Get the fastest balloon in each country. Returns dictionary with country names as keys."
+    ),
+    Tool(
+        name="top_fastest_balloons",
+        func=lambda *args, **kwargs: asyncio.run(top_fastest_balloons_tool(10)),
+        description="Get the top 10 fastest balloons. Returns list of fastest balloons with speed data."
+    ),
+    Tool(
+        name="balloon_speed_analysis",
+        func=lambda *args, **kwargs: asyncio.run(balloon_speed_analysis_tool()),
+        description="Get comprehensive speed analysis including statistics, fastest/slowest balloons, and averages."
+    ),
+    Tool(
+        name="most_distance_covered",
+        func=lambda *args, **kwargs: asyncio.run(most_distance_covered_tool()),
+        description="Get the balloon that has covered the most distance in the past hour."
+    ),
+    Tool(
+        name="distance_rankings",
+        func=lambda *args, **kwargs: asyncio.run(distance_rankings_tool()),
+        description="Get all balloons ranked by distance covered in the past hour."
+    ),
+    Tool(
+        name="wind_analysis",
+        func=lambda *args, **kwargs: asyncio.run(wind_analysis_tool()),
+        description="Analyze wind patterns, directions, and speeds across all balloons and countries."
+    ),
+    Tool(
+        name="atmospheric_anomalies",
+        func=lambda *args, **kwargs: asyncio.run(atmospheric_anomalies_tool()),
+        description="Detect atmospheric anomalies, unusual speeds, altitudes, or wind patterns."
+    ),
+    Tool(
+        name="weather_fronts",
+        func=lambda *args, **kwargs: asyncio.run(weather_fronts_tool()),
+        description="Detect potential weather fronts based on balloon movement patterns across regions."
+    ),
+    Tool(
+        name="comprehensive_weather_analysis",
+        func=lambda *args, **kwargs: asyncio.run(comprehensive_weather_analysis_tool()),
+        description="Get comprehensive weather analysis including wind patterns, anomalies, and fronts."
     ),
 ]
 
