@@ -1,54 +1,46 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from agent import ask  # <-- this ask uses the agent from agent.py
 from collections import deque
 from tools import fetch_balloons, format_balloons
+import asyncio
+import os
 
 chat_history = deque(maxlen=20)
-app = FastAPI()
+app = Flask(__name__)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for now - you can restrict this later
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicitly allow OPTIONS
-    allow_headers=["*"],  # Allow all headers
-)
+# Add CORS support
+CORS(app, origins="*")
 
-class Query(BaseModel):
-    question: str
-
-@app.get("/health")
-async def health_check():
+@app.route("/health", methods=["GET"])
+def health_check():
     return {"status": "healthy", "message": "Windborne agent is running"}
 
-@app.options("/ask")
-async def ask_options():
-    return JSONResponse(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
-        }
-    )
+@app.route("/ask", methods=["POST", "OPTIONS"])
+def ask_endpoint():
+    if request.method == "OPTIONS":
+        return "", 200
+    
+    try:
+        data = request.get_json()
+        question = data.get("question", "")
+        
+        # Run async function in sync context
+        response = asyncio.run(ask(question, list(chat_history)))
+        
+        chat_history.append({"role": "user", "content": question})
+        chat_history.append({"role": "assistant", "content": response})
+        
+        return {"answer": response}
+    except Exception as e:
+        return {"error": f"Failed to process question: {str(e)}"}, 500
 
-@app.post("/ask")
-async def ask_endpoint(query: Query):
-    response = await ask(query.question, list(chat_history))
-    chat_history.append({"role": "user", "content": query.question})
-    chat_history.append({"role": "assistant", "content": response})
-    return {"answer": response}
-
-@app.get("/balloons")
-async def get_balloons():
+@app.route("/balloons", methods=["GET"])
+def get_balloons():
     """Get current balloon data"""
     try:
-        # Fetch raw balloon data (current hour)
-        raw_balloons = await fetch_balloons(0)
+        # Run async function in sync context
+        raw_balloons = asyncio.run(fetch_balloons(0))
         
         # Format balloon data
         formatted_balloons = format_balloons(raw_balloons)
@@ -74,7 +66,7 @@ async def get_balloons():
             "timestamp": "2024-01-01T00:00:00Z"
         }
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Failed to fetch balloon data: {str(e)}"}
-        )
+        return {"error": f"Failed to fetch balloon data: {str(e)}"}, 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
