@@ -9,6 +9,7 @@ import {
   Globe,
   Clock
 } from 'lucide-react';
+import { balloonAPI } from '../services/api';
 
 // Fix for default markers in react-leaflet
 delete Icon.Default.prototype._getIconUrl;
