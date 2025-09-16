@@ -26,7 +26,9 @@ from tools import (
     wind_analysis_tool,
     atmospheric_anomalies_tool,
     weather_fronts_tool,
-    comprehensive_weather_analysis_tool
+    comprehensive_weather_analysis_tool,
+    balloons_by_country_tool,
+    balloons_in_specific_country_tool
 )
 
 load_dotenv()
@@ -133,6 +135,16 @@ balloon_tools = [
         name="comprehensive_weather_analysis",
         func=lambda *args, **kwargs: asyncio.run(comprehensive_weather_analysis_tool()),
         description="Get comprehensive weather analysis including wind patterns, anomalies, and fronts."
+    ),
+    Tool(
+        name="balloons_by_country",
+        func=lambda *args, **kwargs: asyncio.run(balloons_by_country_tool()),
+        description="Get count of balloons by country. Answers questions like 'which country has the most balloons'."
+    ),
+    Tool(
+        name="balloons_in_specific_country",
+        func=lambda country: asyncio.run(balloons_in_specific_country_tool(country)),
+        description="Get balloons in a specific country. Input: country name (e.g., 'India', 'United States')."
     ),
 ]
 

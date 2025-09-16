@@ -195,6 +195,45 @@ async def visited_countries_tool(balloon_id: str) -> list:
     except Exception as e:
         return [f"Error: {str(e)}"]
 
+async def balloons_by_country_tool():
+    """Get count of balloons by country."""
+    try:
+        balloons = format_balloons(await fetch_balloons(0))
+        enriched = enrich_with_country(balloons)
+        
+        country_counts = {}
+        for balloon in enriched:
+            country = balloon.get("country", "Unknown")
+            country_counts[country] = country_counts.get(country, 0) + 1
+        
+        # Sort by count (descending)
+        sorted_countries = sorted(country_counts.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            "total_balloons": len(enriched),
+            "countries": dict(sorted_countries),
+            "country_with_most_balloons": sorted_countries[0] if sorted_countries else ("None", 0)
+        }
+    except Exception as e:
+        return {"error": f"Failed to get balloons by country: {str(e)}"}
+
+async def balloons_in_specific_country_tool(country_name: str):
+    """Get balloons in a specific country."""
+    try:
+        balloons = format_balloons(await fetch_balloons(0))
+        enriched = enrich_with_country(balloons)
+        
+        # Filter by country (case insensitive)
+        country_balloons = [b for b in enriched if b.get("country", "").lower() == country_name.lower()]
+        
+        return {
+            "country": country_name,
+            "count": len(country_balloons),
+            "balloons": country_balloons
+        }
+    except Exception as e:
+        return {"error": f"Failed to get balloons in {country_name}: {str(e)}"}
+
 
 async def fetch_hurricanes(_=None):
     url = "https://www.nhc.noaa.gov/CurrentStorms.json"
