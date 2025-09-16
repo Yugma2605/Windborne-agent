@@ -1,11 +1,12 @@
+# Flask deployment configuration - no more uvicorn!
 services:
   - type: web
-    name: windborne-backend
+    name: windborne-backend-v2
     env: python
     plan: free
     autoDeploy: true
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn main:app --bind 0.0.0.0:$PORT
+    startCommand: python main.py
     pythonVersion: 3.11.7
     envVars:
       - key: PYTHON_VERSION
