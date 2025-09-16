@@ -9,7 +9,7 @@ import json
 import time
 
 # --- Load world countries using lightweight geospatial ---
-from geospatial import find_country_for_point
+from geospatial_fallback import find_country_for_point
 CACHE_FILE = Path("data/balloons_cache.json")
 CACHE_TTL = 30 * 60  # 30 minutes in seconds
 

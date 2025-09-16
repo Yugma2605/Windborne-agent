@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from geospatial import find_country_for_point
+from geospatial_fallback import find_country_for_point
 
 def enrich_balloons(balloons):
     """
