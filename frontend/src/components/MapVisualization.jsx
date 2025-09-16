@@ -244,7 +244,7 @@ const MapVisualization = () => {
       {/* Map Container */}
       <div className="flex-1 min-h-0 relative">
         <div className="h-full rounded-xl overflow-hidden border border-white/20 bg-gray-800">
-          <div style={{ height: 'calc(100vh - 300px)', width: '100%', minHeight: '500px' }}>
+          <div style={{ height: 'calc(100vh - 200px)', width: '100%', minHeight: '600px' }}>
             <MapContainer
               center={[20, 0]}
               zoom={2}
@@ -305,8 +305,8 @@ const MapVisualization = () => {
           </div>
         </div>
         
-        {/* Altitude Legend */}
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-white/20">
+        {/* Altitude Legend - Fixed positioning */}
+        <div className="fixed top-20 right-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-xl border border-white/30">
           <h3 className="text-sm font-semibold text-gray-800 mb-3">Balloon Altitude Legend</h3>
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
@@ -335,54 +335,6 @@ const MapVisualization = () => {
         </div>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <Globe className="w-6 h-6 text-blue-400" />
-            <div>
-              <p className="text-sm text-gray-300">Total Balloons</p>
-              <p className="text-lg font-semibold text-white">{balloons.length}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <Activity className="w-6 h-6 text-green-400" />
-            <div>
-              <p className="text-sm text-gray-300">Highest Balloon</p>
-              <p className="text-lg font-semibold text-white">
-                {highestBalloon ? `${highestBalloon.id} (${highestBalloon.altitude.toFixed(2)} km)` : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <Zap className="w-6 h-6 text-yellow-400" />
-            <div>
-              <p className="text-sm text-gray-300">Fastest Balloon</p>
-              <p className="text-lg font-semibold text-white">
-                {fastestBalloon ? `${fastestBalloon.id} (${fastestBalloon.speed.toFixed(1)} km/h)` : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <MapPin className="w-6 h-6 text-purple-400" />
-            <div>
-              <p className="text-sm text-gray-300">Countries Covered</p>
-              <p className="text-lg font-semibold text-white">
-                {new Set(balloons.map(b => b.country)).size}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Last Update */}
       {lastUpdate && (

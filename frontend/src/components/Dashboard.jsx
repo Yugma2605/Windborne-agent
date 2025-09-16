@@ -75,13 +75,6 @@ const Dashboard = ({ onQuickAction }) => {
       action: 'Which balloon has covered the most distance in the past hour?'
     },
     {
-      title: 'Wind Analysis',
-      description: 'Analyze wind patterns and directions',
-      icon: Wind,
-      color: 'from-cyan-500 to-blue-600',
-      action: 'Analyze wind patterns and directions across all balloons'
-    },
-    {
       title: 'Weather Anomalies',
       description: 'Detect atmospheric anomalies and unusual patterns',
       icon: AlertCircle,
