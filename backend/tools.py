@@ -8,8 +8,8 @@ import os
 import json
 import time
 
-# --- Load world countries using lightweight geospatial ---
-from geospatial_fallback import find_country_for_point
+# --- Load world countries using simple geospatial ---
+from geospatial_simple import find_country_for_point_simple
 CACHE_FILE = Path("data/balloons_cache.json")
 CACHE_TTL = 30 * 60  # 30 minutes in seconds
 
@@ -59,8 +59,8 @@ def format_balloons(raw_balloons: List[List[float]]) -> List[Dict]:
 def enrich_with_country(balloons: list) -> list:
     enriched = []
     for b in balloons:
-        # Find country using lightweight geospatial operations
-        country = find_country_for_point(b["lat"], b["lon"])
+        # Find country using simple geospatial operations
+        country = find_country_for_point_simple(b["lat"], b["lon"])
         b["country"] = country
         enriched.append(b)
     return enriched
