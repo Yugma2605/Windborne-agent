@@ -3,7 +3,6 @@ import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/ChatInterface';
 import MapVisualization from './components/MapVisualization';
-import Settings from './components/Settings';
 import { balloonAPI } from './services/api';
 
 function App() {
@@ -37,8 +36,6 @@ function App() {
         return <ChatInterface prefilledMessage={prefilledMessage} onMessageSent={() => setPrefilledMessage('')} />;
       case 'map':
         return <MapVisualization />;
-      case 'settings':
-        return <Settings />;
       default:
         return <Dashboard onQuickAction={handleQuickAction} />;
     }

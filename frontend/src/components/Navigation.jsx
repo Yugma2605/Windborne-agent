@@ -3,7 +3,6 @@ import {
   Home, 
   MessageSquare, 
   Map, 
-  Settings, 
   Menu, 
   X,
   Wind
@@ -31,12 +30,6 @@ const Navigation = ({ activeTab, setActiveTab }) => {
       icon: Map,
       description: 'Balloon tracking map'
     },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      description: 'Configuration and preferences'
-    }
   ];
 
   return (
