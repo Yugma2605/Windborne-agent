@@ -4,6 +4,7 @@ Uses free reverse geocoding API with caching to avoid rate limits.
 """
 import json
 import time
+import asyncio
 from typing import Dict, Optional
 import httpx
 import os
@@ -57,7 +58,7 @@ class CountryDetector:
         return country
     
     async def _fetch_country_from_api(self, lat: float, lon: float) -> str:
-        """Fetch country from free reverse geocoding API."""
+        """Fetch country from free reverse geocoding API with timeout."""
         # Try multiple free APIs in order of preference
         apis = [
             self._try_nominatim_api,
@@ -67,9 +68,13 @@ class CountryDetector:
         
         for api_func in apis:
             try:
-                country = await api_func(lat, lon)
+                # Add timeout to prevent hanging
+                country = await asyncio.wait_for(api_func(lat, lon), timeout=5.0)
                 if country and country != "Unknown":
                     return country
+            except asyncio.TimeoutError:
+                print(f"API timeout for {lat}, {lon}")
+                continue
             except Exception as e:
                 print(f"API failed: {e}")
                 continue

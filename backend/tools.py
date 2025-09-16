@@ -7,6 +7,7 @@ import httpx
 import os
 import json
 import time
+import asyncio
 
 # --- Load country detector ---
 from country_detector import get_country_for_coordinates
@@ -59,16 +60,27 @@ def format_balloons(raw_balloons: List[List[float]]) -> List[Dict]:
 async def enrich_with_country(balloons: list) -> list:
     """Enrich balloons with country information using lightweight detection."""
     enriched = []
-    for balloon in balloons:
+    
+    # Process balloons in parallel for speed
+    async def get_country_for_balloon(balloon):
         try:
-            # Get country for this balloon's coordinates
             country = await get_country_for_coordinates(balloon["lat"], balloon["lon"])
             balloon["country"] = country
         except Exception as e:
             print(f"Warning: Could not detect country for balloon: {e}")
             balloon["country"] = "Unknown"
-        
-        enriched.append(balloon)
+        return balloon
+    
+    # Use asyncio.gather to process all balloons in parallel
+    try:
+        enriched = await asyncio.gather(*[get_country_for_balloon(balloon) for balloon in balloons])
+    except Exception as e:
+        print(f"Warning: Country detection failed, using fallback: {e}")
+        # Fallback: just add "Unknown" to all balloons
+        for balloon in balloons:
+            balloon["country"] = "Unknown"
+        enriched = balloons
+    
     return enriched
 
 # --- Analytics ---

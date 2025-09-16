@@ -39,14 +39,21 @@ def ask_endpoint():
 def get_balloons():
     """Get current balloon data with country information"""
     try:
-        # Run async function in sync context
-        raw_balloons = asyncio.run(fetch_balloons(0))
+        # Run async function in sync context with timeout
+        raw_balloons = asyncio.run(asyncio.wait_for(fetch_balloons(0), timeout=10.0))
         
         # Format balloon data
         formatted_balloons = format_balloons(raw_balloons)
         
-        # Enrich with country information
-        enriched_balloons = asyncio.run(enrich_with_country(formatted_balloons))
+        # Enrich with country information (with timeout)
+        try:
+            enriched_balloons = asyncio.run(asyncio.wait_for(enrich_with_country(formatted_balloons), timeout=30.0))
+        except asyncio.TimeoutError:
+            print("Country detection timed out, using fallback")
+            # Fallback: add "Unknown" to all balloons
+            enriched_balloons = formatted_balloons
+            for balloon in enriched_balloons:
+                balloon["country"] = "Unknown"
         
         # Add balloon IDs and mock data for frontend
         balloons_with_ids = []
@@ -68,6 +75,8 @@ def get_balloons():
             "total": len(balloons_with_ids),
             "timestamp": "2024-01-01T00:00:00Z"
         }
+    except asyncio.TimeoutError:
+        return {"error": "Request timed out - country detection is taking too long"}, 500
     except Exception as e:
         return {"error": f"Failed to fetch balloon data: {str(e)}"}, 500
 
