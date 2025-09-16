@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from agent import ask  # <-- this ask uses the agent from agent.py
 from collections import deque
-from tools import fetch_balloons, format_balloons
+from tools import fetch_balloons, format_balloons, enrich_with_country
 import asyncio
 import os
 
