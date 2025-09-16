@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from agent import ask  # <-- this ask uses the agent from agent.py
 from collections import deque
-from tools import fetch_balloons, format_balloons, enrich_with_country
+from tools import fetch_balloons, format_balloons
 
 chat_history = deque(maxlen=20)
 app = FastAPI()
@@ -45,26 +45,25 @@ async def ask_endpoint(query: Query):
 
 @app.get("/balloons")
 async def get_balloons():
-    """Get current balloon data with country information"""
+    """Get current balloon data"""
     try:
         # Fetch raw balloon data (current hour)
         raw_balloons = await fetch_balloons(0)
         
-        # Format and enrich with country data
+        # Format balloon data
         formatted_balloons = format_balloons(raw_balloons)
-        enriched_balloons = enrich_with_country(formatted_balloons)
         
-        # Add balloon IDs and mock speed data for frontend
+        # Add balloon IDs and mock data for frontend
         balloons_with_ids = []
-        for i, balloon in enumerate(enriched_balloons):
+        for i, balloon in enumerate(formatted_balloons):
             balloon_data = {
                 "id": f"B{str(i + 1).zfill(3)}",
                 "lat": balloon["lat"],
                 "lng": balloon["lon"],  # Frontend expects 'lng'
                 "altitude": balloon["alt"],
                 "speed": round(15 + (i % 20), 1),  # Mock speed between 15-35 km/h
-                "country": balloon.get("country", "Unknown"),
-                "city": balloon.get("country", "Unknown"),  # Simplified for now
+                "country": "Unknown",  # Simplified - no country detection
+                "city": "Unknown",  # Simplified - no city detection
                 "lastUpdate": "2024-01-01T00:00:00Z"  # Mock timestamp
             }
             balloons_with_ids.append(balloon_data)
